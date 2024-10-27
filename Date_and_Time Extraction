@@ -1,0 +1,45 @@
+import spacy
+import dateparser
+
+nlp = spacy.load('en_core_web_sm')
+
+def extract_dates_and_times(text):
+    doc = nlp(text)
+    
+    extracted_entities = []
+    
+    for ent in doc.ents:
+        if ent.label_ in ['DATE', 'TIME']:
+            parsed_time = dateparser.parse(ent.text)
+            extracted_entities.append({
+                'entity_text': ent.text,
+                'entity_label': ent.label_,
+                'start_position': ent.start_char,
+                'end_position': ent.end_char,
+                'parsed_time': parsed_time
+            })
+    
+    relative_phrases = ["tomorrow", "next day", "day before yesterday", "yesterday", 
+                        "next week", "last week", "next month", "last month", "next year", 
+                        "last year", "in two days", "in three days", "last Monday"]
+    
+    for phrase in relative_phrases:
+        if phrase in text.lower():
+            parsed_time = dateparser.parse(phrase)
+            extracted_entities.append({
+                'entity_text': phrase,
+                'entity_label': 'RELATIVE_DATE',
+                'parsed_time': parsed_time
+            })
+    
+    return extracted_entities
+
+text = """
+Meet Greg tomorrow at 5 PM. We need to review last week’s project.
+The report was submitted the day before yesterday, and the meeting is next Monday at 10 AM.
+"""
+
+results = extract_dates_and_times(text)
+
+for entity in results:
+    print(f"Entity: {entity['entity_text']}, Label: {entity['entity_label']}, Parsed: {entity['parsed_time']}")
